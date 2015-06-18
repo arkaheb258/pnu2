@@ -1,0 +1,1089 @@
+﻿extend layout
+
+mixin wsk(opis, month, przed, na, po, td_nth, klasa, mull)
+	if (!klasa)
+		- klasa = "curr"
+	if (!mull)
+		- mull = 1
+	tr 
+		th(colspan=2)= opis
+		if (!td_nth)
+			td(class=klasa)= przed * mull
+		else
+			th(class=klasa)= przed * mull
+		- var i = 0
+		while i < 12
+			if (!td_nth)
+				td(class=klasa)
+					if (i<month)
+						if (na[i] != null)
+							!= na[i] * mull
+			else
+				th(class=klasa)
+					if (i<month)
+						if (na[i] != null)
+							!= na[i] * mull
+			- i++
+		if (!td_nth)
+			td(class=klasa)
+				if (po && month > 12)
+					!= po * mull
+		else
+			th(class=klasa)
+				if (po && month > 12)
+					!= po * mull
+
+mixin etap_zad(obj, _th)
+	- var styl = ""
+	if (obj.status == 3)
+		- styl = "background-color:rgb(184, 184, 184);border-color: black"
+	tr(style=styl)
+			if (_th)
+				th=	obj.nr
+				th=	obj.opis
+				th(class="curr")= obj.budzet_plan
+				th(class="curr")= obj.budzet_wyk
+				th(class="proc")= obj.budzet_wyk / obj.budzet_plan
+				th(class="rbh")= obj.rbh_plan
+				th(class="rbh")
+					if obj.rbh_wyk
+						!= obj.rbh_wyk.sum
+				th(class="proc")
+					if obj.rbh_wyk && obj.rbh_plan
+						!= obj.rbh_wyk.sum / obj.rbh_plan
+			else 
+				td=	obj.nr
+				td=	obj.opis
+				td(class="curr")= obj.budzet_plan
+				td(class="curr")= obj.budzet_wyk
+				td(class="proc")
+					if obj.budzet_wyk && obj.budzet_plan
+						!= obj.budzet_wyk / obj.budzet_plan
+					else
+						!= 'err'
+					// != obj.budzet_wyk / obj.budzet_plan
+				td(class="rbh")= obj.rbh_plan
+				td(class="rbh")
+					if obj.rbh_wyk
+						!= obj.rbh_wyk.sum
+				td(class="proc")
+					if obj.rbh_wyk && obj.rbh_plan
+						!= obj.rbh_wyk.sum / obj.rbh_plan
+
+block content
+	.widget
+		// script(src='http://dygraphs.com/dygraph-combined.js')
+		script(src='http://192.168.30.12/lib/dygraph-combined.js')
+		h1= projekt.opis
+		if (ip=="192.168.30.12") || (ip=="192.168.34.205")
+			button(onclick="window.location.href += \"&edit=1\"") edytuj
+			br
+			br
+
+		table(border=1, width="50%")
+			thead
+				//
+					tr 
+						th Projekt:
+						td= projekt.opis
+				tr 
+					th Numer projektu:
+					td(class="right")
+						if projekt.oddzial=="Z"
+							!= projekt.nr
+						else 
+							if (projekt.oddzial=="RY" && projekt.nr == '4w2')
+								!= "4" + projekt.oddzial
+							else
+								!= projekt.nr + projekt.oddzial
+				tr 
+					th Data rozpoczęcia:
+					td(class="date")= projekt.data_start
+				tr 
+					th Data zakończenia:
+					td(class="date")= projekt.data_end
+				tr 
+					th Planowany budżet:
+					td(class="curr")= projekt.budzet_plan
+				tr 
+					th= "Planowany budżet na "+cur_year+":"
+					if projekt.budzet_mies[cur_year]
+						td(class="curr")= projekt.budzet_mies[cur_year].reduce(function(pv, cv) { return pv + cv; }, 0)
+					else 
+						td
+				tr 
+					th= "Planowane rbh na "+cur_year+":"
+					if projekt.rbh_mies[cur_year]
+						td(class="rbh")= projekt.rbh_mies[cur_year].reduce(function(pv, cv) { return pv + cv; }, 0)
+					else 
+						td
+				tr 
+					th= "Rbh sprzedane w "+cur_year+":"
+					if projekt.rbh_wyk_mies[cur_year]
+						td(class="rbh")= projekt.rbh_wyk_mies[cur_year].reduce(function(pv, cv) { return pv + cv.ile; }, 0)
+					else 
+						td
+				tr 
+					th Kierownik projektu:
+					td(class="right")= projekt.prowadzacy
+			tbody
+		br
+		
+		table(border=1, width="100%")
+			col(width="50")
+			col(width="50%")
+			col(width="100")
+			col(width="100")
+			col(width="200")
+			col(width="100")
+			thead
+				tr 
+					th Nr zadania
+					th Nazwa zadania
+					th PNP
+					th Data rozpoczęcia
+					th Data zakończenia
+					// th= "Rozliczenie dotychczasowych kosztów na miesiąc " + 0
+					th= "Rozliczenie dotychczasowych kosztów"
+					th % zaawansowania zadania	
+					// th Uwagi
+			- projekt.zaawansowanie = {plan:0, wyk:0}
+			tbody
+				each etap, nr_etapu in projekt.etap
+					if (Object.keys(projekt.etap).length > 1)
+						tr 
+							th
+							th= etap.opis
+							th
+							th(class="date")= etap.data_start
+							th(class="date")= etap.data_end
+							// if etap.budzet_wyk
+								// th(class="curr")= etap.budzet_wyk
+								// th(class="proc")= etap.budzet_wyk / etap.budzet_plan
+							// else 
+							th
+							th
+					each zadanie, nr_zadania in etap.zad_gl
+						tr 
+							// td= nr_etapu + "." + nr_zadania
+							td= nr_zadania
+							td= zadanie.opis
+							if zadanie.konto && zadanie.konto.nazwa
+								td= zadanie.konto.nazwa
+							else 
+								td
+							td(class="date")= zadanie.data_start
+							td(class="date")= zadanie.data_end
+							td(class="curr")= zadanie.budzet_wyk
+							td(class="proc")
+								if zadanie.zaawansowanie
+									if (zadanie.zaawansowanie.proc > 1)
+										!= 1
+										- projekt.zaawansowanie.plan += zadanie.zaawansowanie.plan
+										- projekt.zaawansowanie.wyk += zadanie.zaawansowanie.plan
+									else
+										!= zadanie.zaawansowanie.proc
+										- projekt.zaawansowanie.plan += zadanie.zaawansowanie.plan
+										- projekt.zaawansowanie.wyk += zadanie.zaawansowanie.wyk
+								else 
+									if (zadanie.status == 3)
+										!= 1
+										- projekt.zaawansowanie.plan += zadanie.rbh_plan
+										- projekt.zaawansowanie.wyk += zadanie.rbh_plan
+									else
+										if (zadanie.rbh_wyk && zadanie.rbh_plan)
+											!= zadanie.rbh_wyk.sum / zadanie.rbh_plan
+											- projekt.zaawansowanie.wyk += zadanie.rbh_wyk.sum
+										else
+											!= 0
+											- projekt.zaawansowanie.wyk += zadanie.rbh_wyk
+										- projekt.zaawansowanie.plan += zadanie.rbh_plan
+										
+							// td= JSON.stringify(zadanie.status == 3)
+							// td= JSON.stringify(zadanie.rbh_wyk.sum)
+							// td= JSON.stringify(zadanie.rbh_plan)
+			tbody
+				tr 
+					th
+					th RAZEM
+					th
+					th
+					th
+					if projekt.budzet_wyk
+						th(class="curr")= projekt.budzet_wyk
+					else 
+						th(class="curr")= 0
+					if projekt.zaawansowanie.plan
+						th(class="proc")= projekt.zaawansowanie.wyk / projekt.zaawansowanie.plan
+					else 
+						th(class="proc")= 0
+
+		br
+		
+		table(border=1, width="100%")
+			col(width="50")
+			col(width="50%")
+			thead
+				tr 
+					th Nr zadania
+					th Nazwa  zadania	
+					th(colspan=2) Budżet 		
+					th % wykorzystania budżetu	
+					th(colspan=2) Pracochłonność		
+					th % wykorzystania rbh	
+					//th Uwagi
+				tr 
+					th
+					th
+					th Planowany
+					th Poniesiony
+					th
+					th plan	
+					th poniesiona
+					th
+					// th
+			tbody
+				each val0, i0 in projekt.etap
+					if (Object.keys(projekt.etap).length > 1)
+						+etap_zad(val0, 1)
+						
+					each val, i in projekt.etap[i0].zad_gl
+						+etap_zad(val)
+			tbody
+				tr 
+					th
+					th RAZEM
+					th(class="curr")= projekt.budzet_plan
+					th(class="curr")= projekt.budzet_wyk
+					if projekt.budzet_wyk
+						th(class="proc")= projekt.budzet_wyk / projekt.budzet_plan
+					else 
+						th(class="proc")= 0
+					th(class="rbh")= projekt.rbh_plan
+					if projekt.rbh_wyk && projekt.rbh_plan
+						th(class="rbh")= projekt.rbh_wyk.sum
+						// th= projekt.rbh_wyk.sum
+						th(class="proc")= projekt.rbh_wyk.sum / projekt.rbh_plan
+					else
+						th(class="rbh")= 0
+						th(class="proc")= 0
+
+		br
+
+		table(border=1, width="100%")
+			thead
+				tr 
+					th Nr zadania
+					th Rbh planowane
+					th= "Przed "+cur_year
+					th(colspan=12)= cur_year
+					th= "Po "+cur_year
+				tr 
+					th
+					th
+					th
+					th Styczeń
+					th Luty
+					th Marzec
+					th Kwiecień
+					th Maj
+					th Czerwiec
+					th Lipiec
+					th Sierpień
+					th Wrzesień
+					th Październik
+					th Listopad
+					th Grudzień
+					th
+					
+			tbody
+				each etap, nr_etapu in projekt.etap
+					if (Object.keys(projekt.etap).length > 1)
+						tr 
+							th= "Etap " + etap.nr
+					each zadanie, nr_zadania in etap.zad_gl
+						- var przed = 0
+						- var po = 0
+						- var na = [0,0,0,0,0,0,0,0,0,0,0,0]
+						if (zadanie.rbh_mies)
+							each miesiace, rok in zadanie.rbh_mies
+								each kwota, miesiac in miesiace
+									if (kwota > 0)
+										if (rok < cur_year)
+											- przed += kwota 
+												//* stawka_def
+										else if (rok > cur_year)
+											- po += kwota 
+												//* stawka_def
+										else
+											- na[miesiac] += kwota 
+												//* stawka_def
+						tr 
+							td= nr_zadania
+							td(class="rbh")= zadanie.rbh_plan
+								// * stawka_def
+							td(class="rbh")
+								if (przed > 0)
+									!= przed
+							- var i = 0
+							while i < 12
+								td(class="rbh")
+									if (na[i] > 0)
+										!= na[i]
+								- i++
+							td(class="rbh")
+								if (po > 0)
+									!= po
+									
+				- var bkph_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+				- var bkpw_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+				- var rkpw_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+				//wyliczenie planu
+				if (projekt.rbh_mies)
+					each miesiace, rok in projekt.rbh_mies
+						each kwota, miesiac in miesiace
+							if (kwota > 0)
+								if (rok < cur_year)
+									- bkph_rbh.przed += kwota * stawka_def
+								else if (rok > cur_year)
+									- bkph_rbh.po += kwota * stawka_def
+								else
+									- bkph_rbh.na[miesiac] += kwota * stawka_def
+				//wyliczenie rzeczywistego uzycia
+				each etap, nr_etapu in projekt.etap
+					each zadanie, nr_zadania in etap.zad_gl
+						if (zadanie.rbh_wyk)
+							each miesiace, rok in zadanie.rbh_wyk.rok
+								if (rok < cur_year)
+									each prac, miesiac in miesiace
+										each rbh_rok, user_id in prac
+											if (rbh_rok.ile)
+												- bkpw_rbh.przed += rbh_rok.ile * stawka_def
+												- rkpw_rbh.przed += rbh_rok.ile * rbh_rok.stawka
+								else if (rok == cur_year)
+									- var i = 0
+									while i < 12
+										if (miesiace[i+1])
+											each rbh_rok, user_id in miesiace[i+1]
+												if (rbh_rok.ile)
+													- bkpw_rbh.na[i] += rbh_rok.ile * stawka_def
+													- rkpw_rbh.na[i] += rbh_rok.ile * rbh_rok.stawka
+										- i++
+				// wyliczenie wartosci skumulowanych i wskaznikow EVM
+				- var oks_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0]}
+				- var ohr_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0]}
+				- var wwk_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0]}
+				- var wwh_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0]}
+				- var skk_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0]}
+				- var skp_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0]}
+				- var odb_rbh = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0]}
+
+				- bkph_rbh.cum[0] = bkph_rbh.przed + bkph_rbh.na[0]
+				- bkpw_rbh.cum[0] = bkpw_rbh.przed + bkpw_rbh.na[0]
+				- rkpw_rbh.cum[0] = rkpw_rbh.przed + rkpw_rbh.na[0]
+				- var i = 1
+				while i < 12
+					- bkph_rbh.cum[i] = bkph_rbh.cum[i-1] + bkph_rbh.na[i]
+					- bkpw_rbh.cum[i] = bkpw_rbh.cum[i-1] + bkpw_rbh.na[i]
+					- rkpw_rbh.cum[i] = rkpw_rbh.cum[i-1] + rkpw_rbh.na[i]
+					- i++
+				- bkph_rbh.sum = bkph_rbh.cum[11] + bkph_rbh.po
+				- bkpw_rbh.sum = bkpw_rbh.cum[11] + bkpw_rbh.po
+				- rkpw_rbh.sum = rkpw_rbh.cum[11] + rkpw_rbh.po
+
+				- oks_rbh.przed = bkpw_rbh.przed - rkpw_rbh.przed
+				- ohr_rbh.przed = bkpw_rbh.przed - bkph_rbh.przed
+				if (rkpw_rbh.przed)
+					- wwk_rbh.przed = bkpw_rbh.przed / rkpw_rbh.przed
+				if (bkph_rbh.przed)
+					- wwh_rbh.przed = bkpw_rbh.przed / bkph_rbh.przed
+				- skk_rbh.przed = rkpw_rbh.przed + (projekt.rbh_plan * stawka_def - bkpw_rbh.przed) / wwk_rbh.przed
+				if (rkpw_rbh.przed)
+					- skp_rbh.przed = skk_rbh.przed / rkpw_rbh.przed
+				- odb_rbh.przed = projekt.rbh_plan * stawka_def - skk_rbh.przed
+				- var i = 0
+				while i < 12
+					- oks_rbh.na[i] = bkpw_rbh.cum[i] - rkpw_rbh.cum[i]
+					- ohr_rbh.na[i] = bkpw_rbh.cum[i] - bkph_rbh.cum[i]
+					if (rkpw_rbh.cum[i])
+						- wwk_rbh.na[i] = bkpw_rbh.cum[i] / rkpw_rbh.cum[i]
+					if (bkph_rbh.cum[i])
+						- wwh_rbh.na[i] = bkpw_rbh.cum[i] / bkph_rbh.cum[i]
+					- skk_rbh.na[i] = rkpw_rbh.cum[i] + (projekt.rbh_plan * stawka_def - bkpw_rbh.cum[i]) / wwk_rbh.na[i]
+					if (rkpw_rbh.cum[i])
+						- skp_rbh.na[i] = skk_rbh.na[i] / rkpw_rbh.cum[i]
+					- odb_rbh.na[i] = projekt.rbh_plan * stawka_def - skk_rbh.na[i]
+					- i++
+				
+				tr 
+					th= "Razem"
+					th(class="rbh")= projekt.rbh_plan 
+						//* stawka_def
+					th(class="rbh")
+						if (bkph_rbh.przed > 0)
+							!= bkph_rbh.przed / stawka_def
+					- var i = 0
+					while i < 12
+						th(class="rbh")
+							if (bkph_rbh.na[i] > 0)
+								!= bkph_rbh.na[i] / stawka_def
+						- i++
+					th(class="rbh")
+						if (bkph_rbh.po > 0)
+							!= bkph_rbh.po / stawka_def
+							
+				// div= JSON.stringify(ohr_rbh.na)
+				// div= JSON.stringify(cur_month)
+				// +wsk("BKPH", 13, bkph_rbh.przed, bkph_rbh.na, bkph_rbh.po)
+				+wsk("Plan rbh skumulowany", 13, bkph_rbh.przed, bkph_rbh.cum, bkph_rbh.sum, false, "rbh", 1/stawka_def)
+				+wsk("Sprzedane rbh", cur_month, bkpw_rbh.przed, bkpw_rbh.na, bkpw_rbh.po, false, "rbh", 1/stawka_def)
+				+wsk("Sprzedane rbh skumulowane", cur_month, bkpw_rbh.przed, bkpw_rbh.cum, bkpw_rbh.sum, false, "rbh", 1/stawka_def)
+				// +wsk("RKPW", cur_month, rkpw_rbh.przed, rkpw_rbh.na, rkpw_rbh.po)
+				// +wsk("RKPW skumulowane", cur_month, rkpw_rbh.przed, rkpw_rbh.cum, rkpw_rbh.sum)
+			//
+				tr 
+					th(colspan=16)= "Odchylenia"
+				+wsk("OKS", cur_month, oks_rbh.przed, oks_rbh.na, 0)
+				+wsk("OHR", cur_month, ohr_rbh.przed, ohr_rbh.na, 0)
+				tr 
+					th(colspan=16)= "Wskaźniki wykonania"
+				+wsk("WWK", cur_month, wwk_rbh.przed, wwk_rbh.na, 0)
+				+wsk("WWH", cur_month, wwh_rbh.przed, wwh_rbh.na, 0)
+				tr 
+					th(colspan=16)= "Oszacowania zakończenia projektu"
+				+wsk("SKK", cur_month, skk_rbh.przed, skk_rbh.na, 0)
+				+wsk("SKP", cur_month, skp_rbh.przed, skp_rbh.na, 0)
+				+wsk("ODB", cur_month, odb_rbh.przed, odb_rbh.na, 0)
+		br
+		br
+		table(border=1, width="100%")
+			thead
+				tr 
+					th Nr zadania
+					th Budżet planowany
+					th= "Przed "+cur_year
+					th(colspan=12)= cur_year
+					th= "Po "+cur_year
+				tr 
+					th
+					th
+					th
+					th Styczeń
+					th Luty
+					th Marzec
+					th Kwiecień
+					th Maj
+					th Czerwiec
+					th Lipiec
+					th Sierpień
+					th Wrzesień
+					th Październik
+					th Listopad
+					th Grudzień
+					th
+					
+			tbody
+				each etap, nr_etapu in projekt.etap
+					if (Object.keys(projekt.etap).length > 1)
+						tr 
+							th= "Etap " + etap.nr
+					each zadanie, nr_zadania in etap.zad_gl
+						- var przed = 0
+						- var po = 0
+						- var na = [0,0,0,0,0,0,0,0,0,0,0,0]
+						if (zadanie.budzet_mies)
+							each miesiace, rok in zadanie.budzet_mies
+								each kwota, miesiac in miesiace
+									if (kwota > 0)
+										if (rok < cur_year)
+											- przed += kwota
+										else if (rok > cur_year)
+											- po += kwota
+										else
+											- na[miesiac] += kwota
+						tr 
+							td= nr_zadania
+							td(class="curr")= zadanie.budzet_plan
+							td(class="curr")
+								if (przed > 0)
+									!= przed
+							- var i = 0
+							while i < 12
+								td(class="curr")
+									if (na[i] > 0)
+										!= na[i]
+								- i++
+							td(class="curr")
+								if (po > 0)
+									!= po
+									
+				- var bkph_bud = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+				- var bkpw_bud = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+				- var rkpw_bud = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+				//wyliczenie planu
+				if (projekt.budzet_mies)
+					each miesiace, rok in projekt.budzet_mies
+						each kwota, miesiac in miesiace
+							if (kwota > 0)
+								if (rok < cur_year)
+									- bkph_bud.przed += kwota
+								else if (rok > cur_year)
+									- bkph_bud.po += kwota
+								else
+									- bkph_bud.na[miesiac] += kwota
+				//wyliczenie rzeczywistego uzycia
+				each etap, nr_etapu in projekt.etap
+					each zadanie, nr_zadania in etap.zad_gl
+						if (zadanie.konto && zadanie.konto.data)
+							each kwota, kiedy in zadanie.konto.data
+								if (kiedy && kwota)
+									- var d = new Date(kiedy)
+									// div= d.getFullYear() + " " + d.getMonth() +  ": " + kwota + " " + zadanie.konto.nazwa
+									if ((d.getFullYear() == (cur_year -1)) && (d.getMonth() == 11))
+										// - bkpw_bud.przed += kwota
+										- rkpw_bud.przed += kwota
+									else if (d.getFullYear() == cur_year)
+										- var i = 0
+										while i < 12
+											if (i == d.getMonth())
+												// - bkpw_bud.cum[i] += kwota
+												- rkpw_bud.cum[i] += kwota
+											- i++
+				// wyliczenie wartosci skumulowanych i wskaznikow EVM
+				- var oks_bud = {przed:0, na:[]}
+				- var ohr_bud = {przed:0, na:[]}
+				- var wwk_bud = {przed:0, na:[]}
+				- var wwh_bud = {przed:0, na:[]}
+				- var skk_bud = {przed:0, na:[]}
+				- var skp_bud = {przed:0, na:[]}
+				- var odb_bud = {przed:0, na:[]}
+
+				- bkph_bud.cum[0] = bkph_bud.przed + bkph_bud.na[0]
+				- bkpw_bud.przed = rkpw_bud.przed - rkpw_rbh.przed + bkpw_rbh.przed
+				- bkpw_bud.cum[0] = rkpw_bud.cum[0] - rkpw_rbh.cum[0] + bkpw_rbh.cum[0]
+				// - rkpw_bud.cum[0] = rkpw_bud.przed + rkpw_bud.na[0]
+				- var i = 1
+				while i < 12
+					- bkph_bud.cum[i] = bkph_bud.cum[i-1] + bkph_bud.na[i]
+					if (rkpw_bud.cum[i])
+						- bkpw_bud.cum[i] = rkpw_bud.cum[i] - rkpw_rbh.cum[i] + bkpw_rbh.cum[i]
+					else 
+						- bkpw_bud.cum[i] = null
+						- rkpw_bud.cum[i] = null
+					// - rkpw_bud.cum[i] = rkpw_bud.cum[i-1] + rkpw_bud.na[i]
+					- i++
+				- bkph_bud.sum = bkph_bud.cum[11] + bkph_bud.po
+				// - bkpw_bud.sum = bkpw_bud.cum[11] + bkpw_bud.po
+				// - rkpw_bud.sum = rkpw_bud.cum[11] + rkpw_bud.po
+
+				- oks_bud.przed = bkpw_bud.przed - rkpw_bud.przed
+				- ohr_bud.przed = bkpw_bud.przed - bkph_bud.przed
+				if (rkpw_bud.przed)
+					- wwk_bud.przed = bkpw_bud.przed / rkpw_bud.przed
+				if (bkph_bud.przed)
+					- wwh_bud.przed = bkpw_bud.przed / bkph_bud.przed
+				- skk_bud.przed = rkpw_bud.przed + (projekt.rbh_plan * stawka_def - bkpw_bud.przed) / wwk_bud.przed
+				if (rkpw_bud.przed)
+					- skp_bud.przed = skk_bud.przed / rkpw_bud.przed
+				- odb_bud.przed = projekt.rbh_plan * stawka_def - skk_bud.przed
+				- var i = 0
+				while i < 12
+					if (bkpw_bud.cum[i])
+						- oks_bud.na[i] = bkpw_bud.cum[i] - rkpw_bud.cum[i]
+						- ohr_bud.na[i] = bkpw_bud.cum[i] - bkph_bud.cum[i]
+					if (rkpw_bud.cum[i])
+						- wwk_bud.na[i] = bkpw_bud.cum[i] / rkpw_bud.cum[i]
+					if (bkpw_bud.cum[i] && bkph_bud.cum[i])
+						- wwh_bud.na[i] = bkpw_bud.cum[i] / bkph_bud.cum[i]
+					if (wwk_bud.na[i])
+						- skk_bud.na[i] = rkpw_bud.cum[i] + (projekt.rbh_plan * stawka_def - bkpw_bud.cum[i]) / wwk_bud.na[i]
+					if (rkpw_bud.cum[i])
+						- skp_bud.na[i] = skk_bud.na[i] / rkpw_bud.cum[i]
+					if (skk_bud.na[i])
+						- odb_bud.na[i] = projekt.rbh_plan * stawka_def - skk_bud.na[i]
+					- i++
+				
+				tr 
+					th= "Razem"
+					th(class="curr")= projekt.budzet_plan
+					th(class="curr")
+						if (bkph_bud.przed > 0)
+							!= bkph_bud.przed
+					- var i = 0
+					while i < 12
+						th(class="curr")
+							if (bkph_bud.na[i] > 0)
+								!= bkph_bud.na[i]
+						- i++
+					th(class="curr")
+						if (bkph_bud.po > 0)
+							!= bkph_bud.po
+				//
+					- projekt.bkph_bud.przed = 0
+					- projekt.bkph_bud.po = 0
+					each miesiace, rok in projekt.bkph_bud
+						each kwota, miesiac in miesiace
+							if (kwota)
+								if (rok < cur_year)
+									- projekt.bkph_bud.przed += kwota
+								else if (rok > cur_year)
+									- projekt.bkph_bud.po += kwota
+					tr 
+						th= "Razem"
+						th(class="curr")= projekt.budzet_plan
+						th(class="curr")
+							if (projekt.bkph_bud.przed > 0)
+								!= projekt.bkph_bud.przed
+						- var i = 0
+						while i < 12
+							th(class="curr")
+								if (projekt.bkph_bud[cur_year])
+									!= projekt.bkph_bud[cur_year][i]
+							- i++
+						th(class="curr")
+							if (projekt.bkph_bud.po > 0)
+								!= projekt.bkph_bud.po
+							
+							
+				// div= JSON.stringify(ohr_bud.na)
+				// div= JSON.stringify(cur_month)
+				// +wsk("BKPH", 13, bkph_bud.przed, bkph_bud.na, bkph_bud.po)
+				+wsk("BKPH skumulowane", 13, bkph_bud.przed, bkph_bud.cum, bkph_bud.sum)
+				// +wsk("BKPW", cur_month, bkpw_bud.przed, bkpw_bud.na, bkpw_bud.po)
+				+wsk("BKPW skumulowane", cur_month, bkpw_bud.przed, bkpw_bud.cum, bkpw_bud.sum)
+				// +wsk("RKPW", cur_month, rkpw_bud.przed, rkpw_bud.na, rkpw_bud.po)
+				+wsk("RKPW skumulowane", cur_month, rkpw_bud.przed, rkpw_bud.cum, rkpw_bud.sum)
+				tr 
+					th(colspan=16)= "Odchylenia"
+				+wsk("OKS", cur_month, oks_bud.przed, oks_bud.na, 0)
+				+wsk("OHR", cur_month, ohr_bud.przed, ohr_bud.na, 0)
+				tr 
+					th(colspan=16)= "Wskaźniki wykonania"
+				+wsk("WWK", cur_month, wwk_bud.przed, wwk_bud.na, 0)
+				+wsk("WWH", cur_month, wwh_bud.przed, wwh_bud.na, 0)
+				tr 
+					th(colspan=16)= "Oszacowania zakończenia projektu"
+				+wsk("SKK", cur_month, skk_bud.przed, skk_bud.na, 0)
+				+wsk("SKP", cur_month, skp_bud.przed, skp_bud.na, 0)
+				+wsk("ODB", cur_month, odb_bud.przed, odb_bud.na, 0)
+				
+		div(id="graph")
+		- var g_data = []
+		- var cum_bkph = 0
+		- var cum_bkpw = 0
+		- var cum_rkpw = 0
+		- var max_rkpw = 0
+		each miesiace, rok in projekt.budzet_mies
+			each kwota, miesiac in miesiace
+				if (kwota)
+					- cum_bkph += kwota
+				if (rok > cur_year || (rok == cur_year && miesiac >= cur_month))
+					- cum_bkpw = null
+					- cum_rkpw = null
+				else
+					- cum_rkpw = 0
+					each etap, nr_etapu in projekt.etap
+						each zadanie, nr_zadania in etap.zad_gl
+							if (zadanie.konto && zadanie.konto.data)
+								each kwota, kiedy in zadanie.konto.data
+									if (kiedy && kwota)
+										- var d = new Date(kiedy)
+										// div= d.getFullYear() + " " + d.getMonth() +  ": " + kwota + " " + zadanie.konto.nazwa
+										if ((d.getFullYear() == rok) && (d.getMonth() == miesiac))
+											- cum_rkpw += kwota
+											if (max_rkpw < cum_rkpw)
+												- max_rkpw = cum_rkpw
+					if (!cum_rkpw && max_rkpw > 0)
+						- cum_rkpw = null
+				- g_data.push([rok+"/"+(miesiac+1)+"/31", cum_bkph, cum_bkpw, cum_rkpw])
+		//
+			each miesiace, rok in projekt.rbh_mies
+			each rbh_plan, miesiac in miesiace
+				if (rbh_plan)
+					- cum_bkph += rbh_plan * stawka_def
+				if (projekt.rbh_wyk_mies[rok] && projekt.rbh_wyk_mies[rok][miesiac])
+					- cum_bkpw += projekt.rbh_wyk_mies[rok][miesiac].ile * stawka_def
+					- cum_rkpw += projekt.rbh_wyk_mies[rok][miesiac].kwota
+				if (rok > cur_year || (rok == cur_year && miesiac >= cur_month))
+					- cum_bkpw = null
+					- cum_rkpw = null
+				- g_data.push([rok+"/"+(miesiac+1)+"/31", cum_bkph, cum_bkpw, cum_rkpw])
+		script
+			!= "var g_data = "+JSON.stringify(g_data)+";"
+			!= "var cur_year = "+cur_year+";"
+		script.
+			for (var i in g_data) {
+				g_data[i][0] = new Date(g_data[i][0]);
+			}
+			new Dygraph(document.getElementById("graph"),
+				g_data,
+				{
+					labelsUTC: true,
+					legend: "always",
+					labels: [ 'UTC', "BKPH", "BKPW", "RKPW" ],
+					dateWindow: [ Date.parse(cur_year+"/01/01"), Date.parse((cur_year+1)+"/01/01") ],
+					series : {
+						BKPH : {
+							strokeWidth: 3
+						}
+					},
+					labelsSeparateLines:true,
+					labelsKMB: true,
+					axes:{
+						x:{
+							valueFormatter:function(e){
+								return(new Date(e)).toISOString().substring(0, 7);
+							},
+							axisLabelFormatter:function(e){
+								return(new Date(e)).toISOString().substring(0, 7);
+							},
+							pixelsPerLabel:100
+						},
+						y:{
+							valueFormatter:formatCurr
+						}
+					}
+				}
+			);
+			// console.log('test');
+			// console.log($('#graph'));
+
+
+		// div= JSON.stringify(projekt.rbh_mies)
+		br
+		
+		// div= JSON.stringify(rbh_all)
+		// if ((ip=="192.168.30.12") || (ip=="192.168.34.220")  || (ip=="192.168.34.205")) && rbh_all
+		if rbh_all
+			table(border=1)
+				col(width="50")
+				col(width="100")
+				col(width="150")
+				col(width="200")
+				col(width="100")
+				col
+				col(width="100")
+				thead
+					tr 
+						th(colspan=7) RBH
+					tr 
+						th Rok
+						th Miesiąc
+						th Zadanie
+						th Pracownik
+						th rbh wypracowane (karty pracy)
+						th 
+						th rbh sprzedane do DA
+						// td= JSON.stringify(karty_pr)
+				each miesiace, rok in rbh_all
+					tr
+						th(colspan=7 class="hider")
+							a(href='#')= rok
+					tbody(class="y"+rok)
+						each etapy, miesiac in miesiace
+							each zadania, etap_nr in etapy
+								each osoby2, zad_nr in zadania
+									if (osoby2)
+										tr 
+											td(rowspan=Object.keys(osoby2).length+1)= rok
+											td(class="month" rowspan=Object.keys(osoby2).length+1)= miesiac
+											// if (Object.keys(etapy).length > 1)
+											if (Object.keys(projekt.etap).length > 1)
+												td(rowspan=Object.keys(osoby2).length+1)= "etap "+etap_nr+", zad. "+zad_nr
+											else
+												td(rowspan=Object.keys(osoby2).length+1)= "zad. "+zad_nr
+										each kto, nr in osoby2
+												tr 
+													td(title=kto.nr)
+														//!= kto.nazwa
+														a(href='http://192.168.30.12/karty_pracy/sum.php?nr='+kto.nr)= kto.nazwa
+													// td= JSON.stringify(kto)
+													// td= JSON.stringify(etap_nr)
+													// td= JSON.stringify(projekt.etap[etap_nr])
+													td
+														if (kto.ile_kp)
+															!= kto.ile_kp
+													if (etap_nr != "?" && projekt.etap[etap_nr] && projekt.etap[etap_nr].zad_gl[zad_nr])
+														if (ip=="192.168.30.12") || (ip=="192.168.34.205")
+															if (kto.ile)
+																td(class='sell', title=rok+"_"+miesiac+"_"+kto.nr+"_"+projekt.etap[etap_nr].zad_gl[zad_nr].id+"_"+kto.ile)
+															else 
+																if (kto.ile_kp)
+																	td(class='sell', title=rok+"_"+miesiac+"_"+kto.nr+"_"+projekt.etap[etap_nr].zad_gl[zad_nr].id+"_"+kto.ile_kp)
+														else 
+															td
+													else 
+														td
+													if (kto.ile)
+														td= kto.ile
+													else 
+														td
+
+
+		div(id="dialog-form" title="Sprzedaj godziny" style="display:none;")
+			label(for="sekcja") Sekcja 
+			input(id="sekcja" name="sekcja" value=projekt.oddzial)
+			br
+			label(for="sekcja") Projekt nr
+			input(id="projekt" name="projekt" value=projekt.nr)
+			br
+			label(for="prac") Pracownik 
+			select(id="prac" name="prac")
+			br
+			label(for="zad") Zadanie
+			select(id="zad" name="zad")
+			br
+			label(for="year") Rok
+			input(type="text" id="year" name="year")
+			br
+			label(for="month") Miesiąc 
+			input(type="text" id="month" name="month")
+			br
+			label(for="rbh") Ilość godzin
+			input(type="text" id="rbh" name="rbh")
+		
+		// div= JSON.stringify(rbh_all)
+		// div= JSON.stringify(karty_pr)
+		// div= JSON.stringify(rbh_sprzedane)
+			
+	script(src='http://192.168.30.12:8888/osoby.js')
+	script(src='http://192.168.30.12:8888/pnu.js')
+	script
+		include sprzedaj.js
+block slajdy
+	.slajdy
+		- var bkph_bud = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+		- var bkpw_bud = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+		- var rkpw_bud = {przed:0, na:[0,0,0,0,0,0,0,0,0,0,0,0], po:0, cum:[0,0,0,0,0,0,0,0,0,0,0,0], sum: 0 }
+		//wyliczenie planu
+		if (projekt.budzet_mies)
+			each miesiace, rok in projekt.budzet_mies
+				each kwota, miesiac in miesiace
+					if (kwota > 0)
+						if (rok < cur_year)
+							- bkph_bud.przed += kwota
+						else if (rok > cur_year)
+							- bkph_bud.po += kwota
+						else
+							- bkph_bud.na[miesiac] += kwota
+		//wyliczenie rzeczywistego uzycia
+		each etap, nr_etapu in projekt.etap
+			each zadanie, nr_zadania in etap.zad_gl
+				if (zadanie.konto && zadanie.konto.data)
+					each kwota, kiedy in zadanie.konto.data
+						if (kiedy && kwota)
+							- var d = new Date(kiedy)
+							// div= d.getFullYear() + " " + d.getMonth() +  ": " + kwota + " " + zadanie.konto.nazwa
+							if ((d.getFullYear() == (cur_year -1)) && (d.getMonth() == 11))
+								// - bkpw_bud.przed += kwota
+								- rkpw_bud.przed += kwota
+							else if (d.getFullYear() == cur_year)
+								- var i = 0
+								while i < 12
+									if (i == d.getMonth())
+										// - bkpw_bud.cum[i] += kwota
+										- rkpw_bud.cum[i] += kwota
+									- i++
+		// wyliczenie wartosci skumulowanych i wskaznikow EVM
+		- var oks_bud = {przed:0, na:[]}
+		- var ohr_bud = {przed:0, na:[]}
+		- var wwk_bud = {przed:0, na:[]}
+		- var wwh_bud = {przed:0, na:[]}
+		- var skk_bud = {przed:0, na:[]}
+		- var skp_bud = {przed:0, na:[]}
+		- var odb_bud = {przed:0, na:[]}
+
+		- bkph_bud.cum[0] = bkph_bud.przed + bkph_bud.na[0]
+		- bkpw_bud.przed = rkpw_bud.przed
+		- rkpw_bud.cum[0] = rkpw_bud.przed + rkpw_bud.na[0]
+		- bkpw_bud.cum[0] = rkpw_bud.cum[0]
+		- var i = 1
+		while i < 12
+			- bkph_bud.cum[i] = bkph_bud.cum[i-1] + bkph_bud.na[i]
+			- bkpw_bud.cum[i] = rkpw_bud.cum[i]
+			- i++
+		- bkph_bud.sum = bkph_bud.cum[11] + bkph_bud.po
+		- bkpw_bud.sum = bkpw_bud.cum[11] + bkpw_bud.po
+		- rkpw_bud.sum = rkpw_bud.cum[11] + rkpw_bud.po
+
+		- oks_bud.przed = bkpw_bud.przed - rkpw_bud.przed
+		- ohr_bud.przed = bkpw_bud.przed - bkph_bud.przed
+		if (rkpw_bud.przed)
+			- wwk_bud.przed = bkpw_bud.przed / rkpw_bud.przed
+		if (bkph_bud.przed)
+			- wwh_bud.przed = bkpw_bud.przed / bkph_bud.przed
+		- skk_bud.przed = rkpw_bud.przed + (projekt.rbh_plan * stawka_def - bkpw_bud.przed) / wwk_bud.przed
+		if (rkpw_bud.przed)
+			- skp_bud.przed = skk_bud.przed / rkpw_bud.przed
+		- odb_bud.przed = projekt.rbh_plan * stawka_def - skk_bud.przed
+		- var i = 0
+		while i < 12
+			if (bkpw_bud.cum[i])
+				- oks_bud.na[i] = bkpw_bud.cum[i] - rkpw_bud.cum[i]
+				- ohr_bud.na[i] = bkpw_bud.cum[i] - bkph_bud.cum[i]
+			if (rkpw_bud.cum[i])
+				- wwk_bud.na[i] = bkpw_bud.cum[i] / rkpw_bud.cum[i]
+			if (bkpw_bud.cum[i] && bkph_bud.cum[i])
+				- wwh_bud.na[i] = bkpw_bud.cum[i] / bkph_bud.cum[i]
+			if (wwk_bud.na[i])
+				- skk_bud.na[i] = rkpw_bud.cum[i] + (projekt.rbh_plan * stawka_def - bkpw_bud.cum[i]) / wwk_bud.na[i]
+			if (rkpw_bud.cum[i])
+				- skp_bud.na[i] = skk_bud.na[i] / rkpw_bud.cum[i]
+			if (skk_bud.na[i])
+				- odb_bud.na[i] = projekt.rbh_plan * stawka_def - skk_bud.na[i]
+			- i++
+		
+		if projekt.oddzial=="Z"
+			h1(style="text-align: center;")= "Projekt nr " + projekt.nr+ ' "' + projekt.opis + '"'
+		else 
+			h1(style="text-align: center;")= "Projekt nr " + projekt.nr + projekt.oddzial + ' "' + projekt.opis + '"'
+		if (query.slajd == 0)
+			table(border=1, width="500px", style="margin: 10px auto;")
+				thead
+					tr 
+						th(colspan=2) Informacje o projekcie
+					tr 
+						td Numer projektu:
+						td(class="right")
+							if projekt.oddzial=="Z"
+								!= projekt.nr
+							else 
+								if (projekt.oddzial=="RY" && projekt.nr == '4w2')
+									!= "4" + projekt.oddzial
+								else
+									!= projekt.nr + projekt.oddzial
+					tr 
+						td Data rozpoczęcia:
+						td(class="date")= projekt.data_start
+					tr 
+						td Data zakończenia:
+						td(class="date")= projekt.data_end
+					tr 
+						td Planowany budżet:
+						td(class="curr")= projekt.budzet_plan
+					tr 
+						td= "Planowany budżet na "+cur_year+":"
+						if projekt.budzet_mies[cur_year]
+							td(class="curr")= projekt.budzet_mies[cur_year].reduce(function(pv, cv) { return pv + cv; }, 0)
+						else 
+							td
+					tr 
+						td= "Planowane rbh na "+cur_year+":"
+						if projekt.rbh_mies[cur_year]
+							td(class="rbh")= projekt.rbh_mies[cur_year].reduce(function(pv, cv) { return pv + cv; }, 0)
+						else 
+							td
+					tr 
+						td= "Rbh sprzedane w "+cur_year+":"
+						if projekt.rbh_wyk_mies[cur_year]
+							td(class="rbh")= projekt.rbh_wyk_mies[cur_year].reduce(function(pv, cv) { return pv + cv.ile; }, 0)
+						else 
+							td
+					tr 
+						td Kierownik projektu:
+						td(class="right")= projekt.prowadzacy
+				//
+					tr 
+						th(colspan=2) Wskaźniki
+					tr 
+						td OKS:
+						td(class="right")= oks_bud.na[cur_month-2]
+						// td(class="right")= JSON.stringify(ohr_bud)
+					tr 
+						td WWK:
+						td(class="right")= wwk_bud.na[cur_month-2]
+					tr 
+						td ???:
+						td(class="right")= JSON.stringify(wwk_bud)
+						// td(class="right")= JSON.stringify(wwh_bud)
+						// td(class="right")= JSON.stringify(skk_bud)
+						// td(class="right")= JSON.stringify(skp_bud)
+			br
+		else
+			table(border=1, width="1000px")
+				col(width="5%")
+				col
+				col(width="12%")
+				col(width="12%")
+				col(width="5%")
+				col(width="7%")
+				col(width="7%")
+				col(width="5%")
+				thead
+					tr 
+						th(rowspan=2) Nr zadania
+						th(rowspan=2) Nazwa  zadania	
+						th(colspan=2) Budżet 		
+						th(rowspan=2) % wykorzystania budżetu	
+						th(colspan=2) Pracochłonność		
+						th(rowspan=2) % wykorzystania rbh	
+					tr 
+						th Planowany
+						th Poniesiony
+						th plan	
+						th poniesiona
+				each etap, nr_etapu in projekt.etap
+					if (Object.keys(projekt.etap).length > 1)
+						+etap_zad(etap, 1)
+					each zadanie, nr_zad in etap.zad_gl
+						+etap_zad(zadanie)
+		script
+			| var slajd = 
+			!= query.slajd
+			| ;
+		script.
+			var pos = $("th").first().position().top;
+			var iter = 1;
+			var end = false;
+			var height = 500
+			$('tbody > tr > :first-child').each(function(){
+			// $("tr > td").each(function(){
+				if (end) return;
+				if ($(this).position().top - pos > height){
+					//console.log(slajd);
+					//console.log(iter);
+					if (iter < slajd) {
+						$(this).parent().prevAll().css( "background-color", "red" );
+						$(this).parent().prevAll().addClass("cut");
+					} else {
+						$(this).parent().css( "background-color", "red" );
+						$(this).parent().nextAll().css( "background-color", "red" );
+						$(this).parent().addClass("cut");
+						$(this).parent().nextAll().addClass("cut");
+						end = true;
+					}
+					iter += 1;
+					pos = $(this).position().top;
+					//console.log($(this));
+				}
+			});
+			$(".cut").hide();
+
+	//
+		each lata, zad_nr in karty_pr
+			each miesiace, rok in lata
+				each val1, miesiac in miesiace
+					tr 
+					if (projekt.etap[1].zad_gl[zad_nr].rbh_wyk)
+						if (projekt.etap[1].zad_gl[zad_nr].rbh_wyk.rok[rok])
+							if (projekt.etap[1].zad_gl[zad_nr].rbh_wyk.rok[rok][miesiac])
+								td= projekt.etap[1].zad_gl[zad_nr].rbh_wyk.rok[rok][miesiac].nazwa
+							else 
+								td
+						else 
+							td
+					else 
+						td
+
+			//
+				zg.rbh_wyk.rok[i.rok][i.miesiac].push({nazwa: i.kto, ile: i.ilosc, nr: i.kto_nr});
+					each val0, i0 in karty_pr
+						each val1, i1 in val0
+							tr 
+								td(rowspan=val1.osoby.length + 1)= i0
+								td(rowspan=val1.osoby.length + 1)= i1
+								td(rowspan=val1.osoby.length + 1)= val1.sum + " h"
+							each val2, i2 in val1.osoby
+								tr 
+									td= val2.kto + " (" + val2.czas + " h)"
+									

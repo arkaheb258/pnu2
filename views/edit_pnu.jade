@@ -1,0 +1,128 @@
+﻿extend layout
+
+block edycja
+	.edycja
+		div(title="pr_"+projekt.id)
+			h2= "Projekt nr " + projekt.nr
+				if projekt.oddzial != "Z"
+					!= projekt.oddzial
+			br
+			h3= "Opis: "
+			span(class="edit name" title="opis")= projekt.opis
+			br
+			h3= "Przedmiot uruchomienia: "
+			span(class="edit name" title="przedmiot")= projekt.przedmiot
+			br
+			h3= "Cel: "
+			span(class="edit name" title="cel")= projekt.cel
+			br
+			h3= "Prowadzący projekt: "
+			span(title="prowadzacy")= projekt.prowadzacy
+			
+		table(border=1, width="100%")
+			//col(width="50")
+			col(width="50%")
+			thead
+				tr 
+					th Przedsięwzięcia
+					th Realizujący
+					th Termin rozpoczęcia
+					th Termin zakończenia
+					th Planowane koszty
+					th Planowane rbh DRiW
+					th Status
+			tbody
+				each etap, nr_etapu in projekt.etap
+					if (Object.keys(projekt.etap).length > 1)
+						tr(title="et_"+etap.id) 
+							th= 'Etap '+nr_etapu + ' ' + etap.opis
+							th
+							th(class="date")= etap.data_start
+							th(class="date")= etap.data_end
+							th(class="curr")= etap.budzet_plan
+							th(class="rbh")= etap.rbh_plan
+							td(class="edit state" title="status")= etap.status
+					each zadanie, nr_zadania in etap.zad_gl
+						tr(title="gl_"+zadanie.id) 
+							// td= nr_etapu + "." + nr_zadania
+							th(class="edit name" title="opis")= 'Z'+nr_zadania+'. ' + zadanie.opis
+							td
+							if (Object.keys(zadanie.zad_sz).length > 0)
+								th(class="date")= zadanie.data_start
+								th(class="date")= zadanie.data_end
+								th(class="curr")= zadanie.budzet_plan
+							else
+								td(class="edit date" title="data_start")= zadanie.data_start
+								td(class="edit date" title="data_end")= zadanie.data_end
+								td(class="edit curr" title="budzet_plan")= zadanie.budzet_plan
+							if zadanie.rbh
+								th(title="rbh_"+zadanie.id) 
+									each dzial_rbh, rbh_id in zadanie.rbh
+										!= dzial_rbh.dzial + ": "
+										span(class="edit rbh" title=rbh_id)= dzial_rbh.ilosc
+										br
+							else 
+								th(class="rbh")= zadanie.rbh_plan
+							td(class="edit state" title="status")= zadanie.status
+						each zadanie_sz, nr_zadania_sz in zadanie.zad_sz
+							tr(title="sz_"+zadanie_sz.id) 
+								// td= nr_etapu + "." + nr_zadania
+								td(class="edit name" title="opis")= nr_zadania_sz+'. ' + zadanie_sz.opis
+									if zadanie_sz.budzet
+										each przypis, przypis_id in zadanie_sz.budzet
+											if przypis_id != "sum"
+												td(title="budz_"+przypis_id)
+													!= "Realizujący: "
+													span(class="edit opis" title="nazwa")= przypis.nazwa
+													br
+													!= "Kwota: "
+													span(class="edit curr" title="kwota")= przypis.kwota
+													br
+													!= "Dofinansowanie: "
+													span(class="edit curr" title="dofinans")= przypis.dofinans
+													br
+													!= "Uwagi: "
+													span(class="edit name" title="uwagi")= przypis.uwagi
+													// br
+													// != JSON.stringify(przypis)
+									else
+										td
+								td(class="edit date" title="data_start")= zadanie_sz.data_start
+								td(class="edit date" title="data_end")= zadanie_sz.data_end
+								// td(class="edit curr" title="budzet_plan")= zadanie_sz.budzet_plan
+								td
+								if zadanie_sz.rbh
+									td(title="rbh_"+zadanie_sz.id) 
+										each dzial_rbh, rbh_id in zadanie_sz.rbh
+											!= dzial_rbh.dzial + ": "
+											span(class="edit rbh" title=rbh_id)= dzial_rbh.ilosc
+											br
+								else
+									td(class="rbh")= zadanie_sz.rbh_plan
+								td(class="edit state" title="status")= zadanie_sz.status
+								// th= JSON.stringify(zadanie)
+		br
+		br
+		h2 Weryfikacje
+		table(border=1, width="100%")
+			thead
+				tr 
+					th Data
+					th Treść
+			tbody
+				each tresci, data in projekt.weryfikacja
+					tr
+						td= data
+						td
+							each tresc in tresci
+								// td(class="edit opis" title="co")= JSON.stringify(tresc)
+								span(title="wer_"+tresc.id)
+									span(class="edit name" title="co")= tresc.co
+								br
+		div(id="edit-form" title="Edycja opisu" style="display:none;")
+			label(for="ed_opis")
+			// input(type="text" id="ed_opis" name="ed_opis")
+			textarea(id="ed_opis" name="ed_opis" cols="40" rows="5")
+			br
+	script
+		include sprzedaj.js

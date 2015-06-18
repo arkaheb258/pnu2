@@ -1,0 +1,81 @@
+﻿doctype 1.1
+html
+	head
+		title #{title} KM S.A. xxx
+		link(rel='stylesheet', href='http://192.168.30.12/karty_pracy/style.css')
+		link(rel='stylesheet', href='http://192.168.30.12/karty_pracy/kopex.css')
+		style.
+			table { 
+				background-color:#fff; 
+				border-collapse: collapse; 
+			}
+			.curr {
+				text-align: right;
+			}
+			.proc {
+				text-align: center;
+			}
+			.rbh {
+				text-align: right;
+			}
+			.date {
+				text-align: right;
+			}
+			.right {
+				text-align: right;
+			}
+			.alert {
+				font-weight: bold;
+				color: red;
+			}
+	body
+		script(src='http://192.168.30.12/lib/jquery.min.js')
+		script(src='http://192.168.30.12/lib/jquery-ui.min.js')
+		header
+		.container
+			.main-content
+			.sidebar
+		footer
+			p wygenerowane automatycznie z bazy PNU
+		script.
+			function pad(num) {
+				var s = "00" + num;
+				return s.substr(s.length-2);
+			}
+			
+			function formatDate(curr_date){
+				if (!curr_date) return "";
+				if (typeof curr_date == "string")
+					curr_date = new Date(curr_date);
+				return pad(curr_date.getDate())+'.'+pad(curr_date.getMonth()+1)+'.'+curr_date.getFullYear()+' r.';
+			}
+			
+			function formatCurr(n){
+				if (!n) return "";
+				if (typeof n == "string")
+					n = parseFloat(n);
+				//http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript Short solution #1:
+				return n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$& ').replace(".",",");
+			}
+
+			function formatRbh(n){
+				if (!n) return "0";
+				return (n+".").replace(/\d(?=(\d{3})+\.)/g, '$& ').replace(".","");
+			}
+			
+			function formatProc(val){
+				if (!val) return "0 %";
+				return Math.round(val*10000)/100 + " %";
+			}
+			
+			var monthNames = [ "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
+			"Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień" ];
+
+			$(".date").each(function(){ $(this).text(formatDate($(this).text())); });
+			$(".curr").each(function(){	$(this).text(formatCurr($(this).text())); });
+			$(".rbh").each(function(){	$(this).text(formatRbh($(this).text())); });
+			$(".proc").each(function(){	
+				if ($(this).text() > 1) $(this).addClass("alert");
+				$(this).text(formatProc($(this).text())); 
+			});
+			$(".month").each(function(){	$(this).text(monthNames[$(this).text()-1]); });

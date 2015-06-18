@@ -1,0 +1,396 @@
+﻿extend layout
+
+block content
+	.widget
+		// h1= projekt.opis
+		- var all_to_sell = 0
+		- var all_to_sell_plan = 0
+		- var all_to_sell1 = 0
+		- var all_to_sell_plan1 = 0
+		- var monthNames = [ "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień" ];
+		// - var cur_month = (new Date()).getMonth() + 1
+		- var cur_month = (new Date()).getMonth() 
+		- var cur_month1 = (new Date()).getMonth() + 1
+		- var cur_year = (new Date()).getFullYear()
+		- var cur_year1 = (new Date()).getFullYear()
+		// div= JSON.stringify(query)
+		if (query.month)
+			- cur_month = query.month/1
+			- cur_month1 = query.month/1 + 1
+		if (query.year)
+			- cur_year1 = cur_year = query.year
+		if cur_month == 1
+			- cur_year = (new Date()).getFullYear() -1
+		table(border=1, width="100%")
+			col(width="50")
+			col
+			col(width="120")
+			col(width="100")
+			col(width="100")
+			col(width="110")
+			col(width="110")
+			col(width="80")
+			col(width="80")
+			col(width="80")
+			col(width="80")
+			col(width="80")
+			col(width="80")
+			col(width="80")
+			col(width="80")
+			thead
+				tr 
+					th(rowspan=2) Numer projektu
+					th(rowspan=2) Nazwa projektu	
+					th(rowspan=2) Kierownik projektu
+					th(rowspan=2) Data rozpoczęcia
+					th(rowspan=2) Data zakończenia
+					th(colspan=2) Budżet 		
+					th(rowspan=2) % wykorzystania budżetu	
+					th(colspan=2) Pracochłonność		
+					th(rowspan=2) % wykorzystania rbh	
+					th(colspan=2)= "Rbh "+ monthNames[cur_month-1]
+					th(colspan=2)= "Rbh "+ monthNames[cur_month1-1]
+					// th(rowspan=2) Link
+				tr 
+					th Planowany
+					th Poniesiony
+					th plan	
+					th poniesiona
+					th plan	
+					th poniesiona
+					th plan	
+					th poniesiona
+			tbody
+			each projekty, sekcja in pnu
+				- var keysSorted = Object.keys(projekty).sort()
+				each key, nr_proj in keysSorted
+					- var projekt = projekty[key]
+					if projekt.status == 1
+						tr 
+							if projekt.oddzial=="Z"
+								td= projekt.nr
+							else 
+								td= projekt.nr + projekt.oddzial
+							td
+								a(href='/pnu.html?sekcja='+projekt.oddzial+'&projekt='+key target="_blank")= projekt.opis
+							td= projekt.prowadzacy.join(", ")
+							td(class="date")= projekt.data_start
+							td(class="date")= projekt.data_end
+							td(class="curr")= projekt.budzet_plan
+							if projekt.budzet_wyk
+								td(class="curr")= projekt.budzet_wyk
+								td(class="proc")= projekt.budzet_wyk / projekt.budzet_plan
+							else 
+								td(class="curr")= 0
+								td(class="proc")= 0
+							td(class="rbh")= projekt.rbh_plan
+							if projekt.rbh_wyk && projekt.rbh_plan
+								td(class="rbh")= projekt.rbh_wyk.sum
+								td(class="proc")= projekt.rbh_wyk.sum / projekt.rbh_plan
+							else 
+								td(class="rbh")= 0
+								td(class="proc")= 0
+							- var proj_to_sell = 0
+							- var proj_to_sell1 = 0
+							if (karty_pr[projekt.oddzial] && karty_pr[projekt.oddzial][projekt.nr])
+								each zadanie_kp in karty_pr[projekt.oddzial][projekt.nr]
+									each lata_kp in zadanie_kp
+										if (lata_kp[cur_year] && lata_kp[cur_year][cur_month])
+											- proj_to_sell += lata_kp[cur_year][cur_month].sum
+										if (lata_kp[cur_year1] && lata_kp[cur_year1][cur_month1])
+											- proj_to_sell1 += lata_kp[cur_year1][cur_month1].sum
+							// td= JSON.stringify(proj_to_sell)
+							td(class="rbh")
+								if (projekt.rbh_mies[cur_year])
+									!= projekt.rbh_mies[cur_year][cur_month-1]
+									if (projekt.rbh_mies[cur_year][cur_month-1])
+										- all_to_sell_plan += projekt.rbh_mies[cur_year][cur_month-1]
+							if (projekt.rbh_mies[cur_year] && projekt.rbh_mies[cur_year][cur_month-1])
+								if (projekt.rbh_mies[cur_year][cur_month-1] - proj_to_sell > 100)
+									th(class="rbh warn")= proj_to_sell
+								else if (projekt.rbh_mies[cur_year][cur_month-1] - proj_to_sell < -100)
+									th(class="rbh alert")= proj_to_sell
+								else 
+									th(class="rbh")= proj_to_sell
+							else 
+								th(class="rbh")= proj_to_sell
+							// td(class="rbh")= proj_to_sell
+							- all_to_sell += proj_to_sell
+							td(class="rbh")
+								if (projekt.rbh_mies[cur_year1])
+									!= projekt.rbh_mies[cur_year1][cur_month1-1]
+									if (projekt.rbh_mies[cur_year1][cur_month1-1])
+										- all_to_sell_plan1 += projekt.rbh_mies[cur_year1][cur_month1-1]
+							// td(class="rbh")= proj_to_sell1
+							th(class="rbh")= proj_to_sell1
+							- all_to_sell1 += proj_to_sell1
+							// td 
+								// a(href='/pnu.html?sekcja='+projekt.oddzial+'&projekt='+key target="_blank") Przejdź do projektu
+							//
+			tr 
+				th
+				th
+				th
+				th
+				th
+				th(class="curr")= suma.budzet_plan
+				th(class="curr")= suma.budzet_wyk
+				th
+				th(class="rbh")= suma.rbh_plan
+				th(class="rbh")= suma.rbh_wyk
+				th
+				th(class="rbh")= all_to_sell_plan
+				th(class="rbh")= all_to_sell
+				th(class="rbh")= all_to_sell_plan1
+				th(class="rbh")= all_to_sell1
+		br
+		br
+		// a(href='http://192.168.30.12:8888/konta.xlsx?year=2015&month=1') Styczeń
+		// br
+		// a(href='http://192.168.30.12:8888/konta.xlsx?year=2015&month=2') Luty
+		// br
+		// a(href='http://192.168.30.12:8888/konta.xlsx?year=2015&month=3') Marzec
+		// br
+		a(href='http://192.168.30.12:8888/konta.xlsx?year=2015&month=4') Kwiecień
+		br
+		a(href='http://192.168.30.12:8888/konta.xlsx?year=2015&month=5') Maj
+		br
+		a(href='http://192.168.30.12:8888/projekt.pptx') Generuj prezentacje
+		br
+		a(href='http://192.168.30.12:8888/out.pptx') Prezentacja
+		br
+		a(href='http://192.168.30.12:8888/pnu.xlsx') Generuj PNU
+		br
+		a(href='http://192.168.30.12:8888/out.xlsx') PNU XLSX
+		br
+		a(href='http://192.168.30.12/excel/') Salda z DA
+		script.
+			$("tbody > tr:even").css("background-color", "#eeeeee");
+			$("tbody > tr:odd").css("background-color", "#ffffff");		
+	//		
+		table(border=1, width="100%")
+			col(width="50")
+			col(width="50%")
+			thead
+				tr 
+					th Nr zadania
+					th Nazwa zadania
+					th Rozliczenie dotychczasowych kosztów na miesiąc xxxx
+					th % zaawansowania zadania	
+					th Uwagi
+				// each val0, i0 in pnu
+					// each projekt, i1 in pnu[i0]
+						tr 
+							td= i0
+							td= val1.opis
+					// each val1, i1 in val0
+			// each val0, i0 in projekt.etap
+				// each val, i in projekt.etap[i0].zad_gl
+						td= i
+						td
+						td
+						td
+block slajdy
+	.slajdy
+		- var g_data = [[0,0,0]]
+		- var g_label = ['']
+		- var p_iter = 1
+		h1(style="text-align: center;") Plan Nowych Uruchomień
+		table(border=1, width="1000px" class="slajd_name")
+			col(width="50")
+			thead
+				tr 
+					th(rowspan=2) Numer projektu
+					th(rowspan=2) Data rozpoczęcia
+					th(rowspan=2) Data zakończenia
+					th(colspan=2) Budżet 		
+					th(rowspan=2) % wykorzystania budżetu	
+					th(colspan=2) Pracochłonność		
+					th(rowspan=2) % wykorzystania rbh	
+				tr 
+					th Planowany
+					th Poniesiony
+					th plan	
+					th poniesiona
+			each sekcje, sekcja in pnu
+				tbody(class="sekcja_"+sekcja)
+					each projekt, nr_proj in sekcje
+						if projekt.status == 1
+							tr 
+								if projekt.oddzial=="Z"
+									- g_label[p_iter] = projekt.nr
+									td= projekt.nr
+								else 
+									td= projekt.nr + projekt.oddzial
+									- g_label[p_iter] = projekt.nr + projekt.oddzial
+								td(class="date")= projekt.data_start
+								td(class="date")= projekt.data_end
+								td(class="curr")= projekt.budzet_plan
+								if projekt.budzet_wyk
+									td(class="curr")= projekt.budzet_wyk
+									td(class="proc")= projekt.budzet_wyk / projekt.budzet_plan
+								else 
+									td(class="curr")= 0
+									td(class="proc")= 0
+								if (projekt.nr == 77)
+									- g_data.push([p_iter, projekt.etap[1].budzet_plan, projekt.etap[1].budzet_wyk])
+									- g_label[p_iter] = projekt.nr + " E1"
+								else
+									- g_data.push([p_iter, projekt.budzet_plan, projekt.budzet_wyk])
+								- p_iter += 2
+								td(class="rbh")= projekt.rbh_plan
+								if projekt.rbh_wyk && projekt.rbh_plan
+									td(class="rbh")= projekt.rbh_wyk.sum
+									td(class="proc")= projekt.rbh_wyk.sum / projekt.rbh_plan
+								else 
+									td(class="rbh")= 0
+									td(class="proc")= 0
+			- g_data.push([p_iter, 0, 0])
+			tbody(class="sekcja_suma")
+				tr 
+					th
+					th
+					th
+					th(class="curr")= suma.budzet_plan
+					th(class="curr")= suma.budzet_wyk
+					th
+					th(class="rbh")= suma.rbh_plan
+					th(class="rbh")= suma.rbh_wyk
+					th
+
+		div(id="multibar" class="graph" style="width:1000px")
+		script(src='http://192.168.30.12/lib/dygraph-combined.js')
+		script
+			
+			!= "var g_data = "+JSON.stringify(g_data)+";"
+			!= "var g_label = "+JSON.stringify(g_label)+";"
+		script.
+			function darkenColor(colorStr) {
+			// Defined in dygraph-utils.js
+				var color = Dygraph.toRGB_(colorStr);
+				color.r = Math.floor((255 + color.r) / 2);
+				color.g = Math.floor((255 + color.g) / 2);
+				color.b = Math.floor((255 + color.b) / 2);
+				return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
+			}		
+			function multiColumnBarPlotter(e) {
+				// We need to handle all the series simultaneously.
+				if (e.seriesIndex !== 0) return;
+
+				var g = e.dygraph;
+				var ctx = e.drawingContext;
+				var sets = e.allSeriesPoints;
+				var y_bottom = e.dygraph.toDomYCoord(0);
+
+				// Find the minimum separation between x-values.
+				// This determines the bar width.
+				var min_sep = Infinity;
+				for (var j = 0; j < sets.length; j++) {
+					var points = sets[j];
+					for (var i = 1; i < points.length; i++) {
+						var sep = points[i].canvasx - points[i - 1].canvasx;
+						if (sep < min_sep) min_sep = sep;
+					}
+				}
+				var bar_width = Math.floor(2.0 / 3 * min_sep);
+
+				var fillColors = [];
+				var strokeColors = g.getColors();
+				for (var i = 0; i < strokeColors.length; i++) {
+					fillColors.push(darkenColor(strokeColors[i]));
+				}
+
+				for (var j = 0; j < sets.length; j++) {
+					ctx.fillStyle = fillColors[j];
+					ctx.strokeStyle = strokeColors[j];
+					for (var i = 0; i < sets[j].length; i++) {
+						var p = sets[j][i];
+						var center_x = p.canvasx;
+						var x_left = center_x - (bar_width / 2) * (1 - j/(sets.length-1));
+
+						ctx.fillRect(x_left, p.canvasy, bar_width/sets.length, y_bottom - p.canvasy);
+
+						ctx.strokeRect(x_left, p.canvasy, bar_width/sets.length, y_bottom - p.canvasy);
+					}
+				}
+			}
+			var g4 = new Dygraph(
+				document.getElementById("multibar"),
+				g_data,
+				{
+					labels: [ 'Projekt', 'Budżet planowany', 'Budżet poniesiony' ],
+					legend: "always",
+					labelsSeparateLines:true,
+					labelsKMB: true,
+					includeZero: true,
+					plotter: multiColumnBarPlotter,
+					axes:{
+						x:{
+							valueFormatter:function(e){
+								return e+'';
+							},
+							axisLabelFormatter:function(e){
+								if (g_label[e])
+									return g_label[e];
+								return '';
+							},
+							pixelsPerLabel:10,
+							drawGrid: false
+						}
+					}
+				}
+			);
+			
+		table(border=1, width="1000px" class="slajd_bud")
+			col(width="50")
+			col(width="50%")
+			thead
+				tr 
+					th Numer projektu
+					th Opis projektu
+					th Kierownik projektu
+					th Data rozpoczęcia
+					th Data zakończenia
+			each sekcje, sekcja in pnu
+				tbody(class="sekcja_"+sekcja)
+					each projekt, nr_proj in sekcje
+						if projekt.status == 1
+							tr 
+								if projekt.oddzial=="Z"
+									td= projekt.nr
+								else 
+									td= projekt.nr + projekt.oddzial
+								td= projekt.opis
+								td= projekt.prowadzacy.join(", ")
+								td(class="date")= projekt.data_start
+								td(class="date")= projekt.data_end
+//
+	block edycja
+	.edycja
+		h2 Weryfikacje
+		table(border=1, width="100%")
+			thead
+				tr 
+					th Projekt
+					th= "01.05.2014 r."
+					th= "30.09.2014 r."
+			each sekcje, sekcja in pnu
+				tbody(class="sekcja_"+sekcja)
+					each projekt, nr_proj in sekcje
+						tr
+							td= projekt.nr
+								if projekt.oddzial != "Z"
+									!= projekt.oddzial
+							td
+								each tresci, data in projekt.weryfikacja
+									if (data == "01.05.2014 r.")
+											each tresc in tresci
+												!= "- " + tresc.co
+												br
+							td
+								each tresci, data in projekt.weryfikacja
+									if (data == "30.09.2014 r.")
+											each tresc in tresci
+													!= "- " + tresc.co
+													br
+

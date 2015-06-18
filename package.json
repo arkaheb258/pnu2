@@ -1,0 +1,21 @@
+{
+  "name": "pnu",
+  "version": "1.0.0",
+  "description": "Lista PNU",
+  "main": "main.js",
+  "private": true,
+  "dependencies": {
+    "express": "4.10.x",
+    "socket.io": "1.2.x",
+    "compression": "1.3.x",
+    "mime": "1.2.x",
+    "mssql": "~2.1.1",
+    "mysql": "~2.5.5",
+    "async": "~0.9.0",
+    "excel4node": "~0.2.10",
+    "jade": "~1.9.2",
+    "wkhtmltoimage": "~0.1.3",
+    "officegen": "~0.2.9"
+  },
+  "author": "Arkadiusz <kopex.machinery@gmail.com>"
+}

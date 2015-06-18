@@ -1,0 +1,10 @@
+{
+	"name"			: "pnu_app",
+	"script"		: "./main.js",
+	"error_file"	: "./log/pnu.err",
+	"pid_file"		: "./log/main.pid",
+	"log_date_format" : "YYYY-MM-DD HH:mm:ss.SSS ",
+	"merge_logs"	: true,
+	"max_memory_restart":	"300M",
+	"out_file"		: "./log/pnu.log"
+}

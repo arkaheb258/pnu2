@@ -1,0 +1,192 @@
+﻿doctype 1.1
+html
+	head
+		if (projekt)
+			if projekt.oddzial=="Z"
+				title #{"PNU "+projekt.nr}
+			else 
+				title #{"PNU "+projekt.nr + projekt.oddzial}
+		else 
+			title Lista PNU
+		link(rel='stylesheet', href='http://192.168.30.12/karty_pracy/style.css')
+		link(rel='stylesheet', href='http://192.168.30.12/karty_pracy/kopex.css')
+		style.
+			table { 
+				background-color:#fff; 
+				border-collapse: collapse; 
+			}
+			.curr {
+				text-align: right;
+			}
+			.proc {
+				text-align: center;
+			}
+			.rbh {
+				text-align: right;
+			}
+			.date {
+				text-align: right;
+			}
+			.right {
+				text-align: right;
+			}
+			.alert {
+				font-weight: bold;
+				color: red;
+			}
+			.warn {
+				font-weight: bold;
+				color: blue;
+			}
+			.slajdy th {
+				background: #FF6600;
+				color: white;
+			}
+		style
+			if (query.slajd == 0)
+				| .slajd_name {display: none;}
+				| .slajd_bud {display: none;}
+			if (query.slajd == 1)
+				| .graph {display: none;}
+				| .slajd_name {display: none;}
+				| .sekcja_Z {}
+				| .sekcja_RY {display: none;}
+				| .sekcja_W {display: none;}
+				| .sekcja_DHTP {display: none;}
+				| .sekcja_suma {display: none;}
+			if (query.slajd == 2)
+				| .graph {display: none;}
+				| .slajd_name {display: none;}
+				| .sekcja_Z {display: none;}
+
+			if (query.slajd == 3)
+				| .graph {display: none;}
+				| .slajd_bud {display: none;}
+				| .sekcja_Z {}
+				| .sekcja_RY {display: none;}
+				| .sekcja_W {display: none;}
+				| .sekcja_DHTP {display: none;}
+				| .sekcja_suma {display: none;}
+			if (query.slajd == 4)
+				| .graph {display: none;}
+				| .slajd_bud {display: none;}
+				| .sekcja_Z {display: none;}
+			//
+				if (query.slajd == 1)
+					| .slajd_bud {display: none;}
+					| .sekcja_Z {}
+					| .sekcja_RY {display: none;}
+					| .sekcja_W {display: none;}
+					| .sekcja_DHTP {display: none;}
+					| .sekcja_suma {display: none;}
+				if (query.slajd == 2)
+					| .slajd_bud {display: none;}
+					| .sekcja_Z {display: none;}
+					| .sekcja_RY {}
+					| .sekcja_W {display: none;}
+					| .sekcja_DHTP {display: none;}
+					| .sekcja_suma {display: none;}
+				if (query.slajd == 3)
+					| .slajd_bud {display: none;}
+					| .sekcja_Z {display: none;}
+					| .sekcja_RY {display: none;}
+					//| .sekcja_DHTP {display: none;}
+					
+				if (query.slajd == 4)
+					| .slajd_name {display: none;}
+					| .sekcja_Z {}
+					| .sekcja_RY {display: none;}
+					| .sekcja_W {display: none;}
+					| .sekcja_DHTP {display: none;}
+					| .sekcja_suma {display: none;}
+				if (query.slajd == 5)
+					| .slajd_name {display: none;}
+					| .sekcja_Z {display: none;}
+					| .sekcja_RY {}
+					| .sekcja_W {display: none;}
+					| .sekcja_DHTP {display: none;}
+					| .sekcja_suma {display: none;}
+				if (query.slajd == 6)
+					| .slajd_name {display: none;}
+					| .sekcja_Z {display: none;}
+					| .sekcja_RY {display: none;}
+					//| .sekcja_DHTP {display: none;}
+				
+	- var stawka_def = 100
+	if (projekt && projekt.nr == 77)
+		- var stawka_def = 68
+	- var cur_month = (new Date()).getMonth() 
+	- var cur_year = (new Date()).getFullYear()
+	// - var cur_month = 5
+	// - var cur_year = 2015
+	body
+		script(src='http://192.168.30.12/lib/jquery.min.js')
+		script(src='http://192.168.30.12/lib/jquery-ui.min.js')
+		script.
+			function pad(num) {
+				var s = "00" + num;
+				return s.substr(s.length-2);
+			}
+			
+			function formatDate(curr_date){
+				if (!curr_date) return "";
+				if (typeof curr_date == "string")
+					curr_date = new Date(curr_date);
+				return pad(curr_date.getDate())+'.'+pad(curr_date.getMonth()+1)+'.'+curr_date.getFullYear()+' r.';
+			}
+			
+			function formatCurr(n){
+				if (!n) return "";
+				if (typeof n == "string")
+					n = parseFloat(n);
+				//http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript Short solution #1:
+				return n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$& ').replace(".",",");
+			}
+
+			function formatRbh(n){
+				if (!n) return "0";
+				n = parseFloat(n);
+				return n.toFixed(1).replace(/\d(?=(\d{3})+\.)/g, '$& ').replace(".",",");
+				
+				n = Math.floor(n);
+				// n = n+'';
+				// if (n.indexOf('.') == -1) 
+				n = n+'.';
+				// console.log(n);
+				return n.replace(/\d(?=(\d{3})+\.)/g, '$& ').replace(".","");
+			}
+			
+			function formatProc(val){
+				if (!val) return "0 %";
+				return Math.round(val*10000)/100 + " %";
+			}
+			
+			var monthNames = [ "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
+			"Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień" ];
+		header
+		.container
+			.main-content
+				if (query.edit)
+					block edycja
+				else if (query.slajd)
+					block slajdy
+				else 
+					block content
+			.sidebar
+		footer
+			if (!query.slajd)
+				p wygenerowane automatycznie z bazy PNU
+		script.
+
+			$(".state").each(function(){ var st = $(this).text(); if (st == 1) st = "aktywny"; else if (st == 3) st = "zakończony"; $(this).text(st);});
+			$(".date").each(function(){ $(this).text(formatDate($(this).text())); });
+			$(".curr").each(function(){	$(this).text(formatCurr($(this).text())); });
+			$(".rbh").each(function(){	$(this).text(formatRbh($(this).text())); });
+			$(".proc").each(function(){	
+				if ($(this).text() > 1) $(this).addClass("alert");
+				if (!isNaN(Math.round($(this).text())))
+					$(this).text(formatProc($(this).text())); 
+				else 
+					$(this).text('');
+			});
+			$(".month").each(function(){	$(this).text(monthNames[$(this).text()-1]); });
